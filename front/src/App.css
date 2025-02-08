@@ -1,0 +1,88 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+}
+
+#root {
+  width: 100%;
+  height: 95vh;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.search-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: absolute;
+  bottom: 20px;
+  right: 10px;
+}
+
+.search {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.input {
+  width: 300px;
+  height: 40px;
+  outline: none;
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 85vh;
+  overflow-y: scroll;
+}
+
+.message {
+  outline: none;
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+  background: #333232;
+}
+
+.info {
+  width: 100%;
+  text-align: end;
+}
+
+.right-container {
+  width: 100%;
+  text-align: end;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.right {
+  width: 50%;
+  text-align: end;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.left {
+  width: 50%;
+  text-align: start;
+}
