@@ -1,0 +1,62 @@
+name: local-llm
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - 7869:11434
+    volumes:
+      - ./ollama/ollama:/root/.ollama
+    container_name: ollama
+    pull_policy: always
+    tty: true
+    restart: unless-stopped
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_HOST=0.0.0.0
+    networks:
+      - local-llm-network
+
+  # Sidecar to pull a model as soon as the ollama service starts
+  model-puller:
+    image: ollama/ollama:latest
+    container_name: ollama-model-puller
+    volumes:
+      - ./ollama/ollama:/root/.ollama
+      - ./ollama_model_puller.sh:/ollama_model_puller.sh
+    depends_on:
+      - ollama
+    entrypoint: ["/bin/bash", "/ollama_model_puller.sh"]
+    networks:
+      - local-llm-network
+
+  backend:
+    container_name: go-backend
+    build:
+      context: ./back
+    ports:
+      - 4444:4444
+    restart: unless-stopped
+    environment:
+      - OLLAMA_SERVER=http://ollama:11434
+    depends_on:
+      - ollama
+    networks:
+      - local-llm-network
+
+  frontend:
+    container_name: react-frontend
+    build:
+      context: ./front
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    environment:
+      - VITE_API_URL=http://backend:4444
+    depends_on:
+      - ollama
+    networks:
+      - local-llm-network
+
+networks:
+  local-llm-network:
+    driver: bridge
