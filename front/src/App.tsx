@@ -3,6 +3,8 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import "./App.css";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4444/";
+
 const Search = ({
   thinking,
   onInputChange,
@@ -86,7 +88,7 @@ function App() {
 
     let data = "";
 
-    const response = await fetch("http://localhost:4444/", {
+    const response = await fetch(API_URL, {
       signal: controller.signal,
       method: "POST",
       headers: {
