@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"log/slog"
 	"net/http"
@@ -16,7 +17,7 @@ import (
 	"github.com/tmc/langchaingo/llms/ollama"
 )
 
-const OLLAMA_SERVER = "http://localhost:7869"
+const DEFAULT_OLLAMA_SERVER = "http://localhost:7869"
 const SERVER_PORT = 4444
 const MODEL_TEMPERATURE = 0.1
 
@@ -38,6 +39,7 @@ func main() {
 	flag.Parse()
 
 	// Routes
+	e.GET("/healthz", func(c echo.Context) error { return c.String(http.StatusOK, "I'm healthy") })
 	e.POST("/", callStream)
 
 	// Start server
@@ -55,7 +57,12 @@ func callStream(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid JSON"})
 	}
 
-	llm, err := ollama.New(ollama.WithModel(*modelName), ollama.WithServerURL(OLLAMA_SERVER))
+	ollama_server, exists := os.LookupEnv("OLLAMA_SERVER")
+	if !exists {
+		ollama_server = DEFAULT_OLLAMA_SERVER
+	}
+
+	llm, err := ollama.New(ollama.WithModel(*modelName), ollama.WithServerURL(ollama_server))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -93,7 +100,12 @@ func callStream(c echo.Context) error {
 }
 
 func callSimple(c echo.Context) error {
-	llm, err := ollama.New(ollama.WithModel(*modelName), ollama.WithServerURL(OLLAMA_SERVER))
+	ollama_server, exists := os.LookupEnv("OLLAMA_SERVER")
+	if !exists {
+		ollama_server = DEFAULT_OLLAMA_SERVER
+	}
+
+	llm, err := ollama.New(ollama.WithModel(*modelName), ollama.WithServerURL(ollama_server))
 	if err != nil {
 		log.Fatal(err)
 	}
