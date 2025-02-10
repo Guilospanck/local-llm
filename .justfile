@@ -8,4 +8,4 @@ back-init:
 	cd back/ && go mod tidy && go run .
 
 back-dev:
-	cd back/ && go run .
+	cd back/ && air

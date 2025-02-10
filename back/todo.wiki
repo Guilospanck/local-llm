@@ -1,0 +1,2 @@
+- Make the model do some API request
+	- Need to check the tokens that are created when answering

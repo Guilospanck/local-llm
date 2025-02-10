@@ -79,8 +79,22 @@ func callStream(c echo.Context) error {
 	}
 
 	ctx := context.Background()
+
 	// "Human: %s\nAssistant:", body.Query
-	completion, err := llm.Call(ctx, body.Query,
+	prompt := body.Query
+
+	// INFO: the `llm.Call` method does something like this:
+	// messages := []llms.MessageContent{
+	// 	{
+	// 		Role:  llms.ChatMessageTypeSystem,
+	// 		Parts: []llms.ContentPart{llms.TextContent{Text: prompt}},
+	// 	},
+	// }
+	// completion, err := llm.GenerateContent(ctx, messages,
+	//
+	// You could use it to pass different types of data (like binary data, for example)
+
+	completion, err := llm.Call(ctx, prompt,
 		llms.WithTemperature(MODEL_TEMPERATURE),
 		llms.WithStreamingFunc(func(ctx context.Context, chunk []byte) error {
 			fmt.Fprint(w, string(chunk))

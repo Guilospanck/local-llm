@@ -41,13 +41,21 @@ const Search = ({
   );
 };
 
+const createMarkdownElement = (data: string) => {
+  return (
+    <Markdown remarkPlugins={[remarkGfm]} className="message">
+      {data}
+    </Markdown>
+  );
+};
+
+let controller: AbortController | null = null;
 function App() {
   const [query, setQuery] = useState<string>("");
   const [thinking, setThinking] = useState<boolean>(false);
   const [messageElements, setMessageElements] = useState<
     Array<{ answer: React.ReactNode; time?: string; question: React.ReactNode }>
   >([]);
-  const [controller, setController] = useState<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [currentAnswer, setCurrentAnswer] = useState<string>("");
 
@@ -61,62 +69,52 @@ function App() {
     focusInput();
   }, []);
 
-  const createMarkdownElement = (data: string) => {
-    return (
-      <Markdown remarkPlugins={[remarkGfm]} className="message">
-        {data}
-      </Markdown>
-    );
-  };
-
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.code === "Enter") {
-      onSearchClick();
-    }
-  };
-
   const removeThinkTag = (data: string) =>
     data.replace("<think>", "").replace("</think>", "");
 
   const onSearchClick = async () => {
     const t0 = performance.now();
 
+    controller = new AbortController();
     setThinking(true);
-
-    const controller = new AbortController();
-    setController(controller);
 
     let data = "";
 
-    const response = await fetch(API_URL, {
-      signal: controller.signal,
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ query }),
-    });
+    try {
+      const response = await fetch(API_URL, {
+        signal: controller.signal,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query }),
+      });
 
-    if (!response.body) {
-      console.error("ReadableStream not supported");
-      return;
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) {
-        break;
+      if (!response.body) {
+        console.error("ReadableStream not supported");
+        return;
       }
 
-      const chunk = decoder.decode(value, { stream: true });
-      if (!chunk) continue;
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
 
-      data += chunk;
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          console.info("Done reading.");
+          console.info({ value });
+          break;
+        }
 
-      setCurrentAnswer(removeThinkTag(data));
+        const chunk = decoder.decode(value, { stream: true });
+        if (!chunk) continue;
+
+        data += chunk;
+
+        setCurrentAnswer(removeThinkTag(data));
+      }
+    } catch (err) {
+      console.error(err);
     }
 
     data = removeThinkTag(data);
@@ -146,6 +144,12 @@ function App() {
 
   const onInputChange = (val: string) => {
     setQuery(val);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.code === "Enter") {
+      onSearchClick();
+    }
   };
 
   return (
