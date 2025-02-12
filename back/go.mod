@@ -1,9 +1,10 @@
-module playing-back
+module base
 
 go 1.23.4
 
 require (
 	github.com/labstack/echo/v4 v4.13.3
+	github.com/lib/pq v1.10.9
 	github.com/tmc/langchaingo v0.1.12
 )
 
