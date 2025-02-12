@@ -1,2 +1,3 @@
 - Make the model do some API request
-	- Need to check the tokens that are created when answering
+	- Need to check the tokens that are created when answering :check:
+	- Use GORM instead of normal SQL

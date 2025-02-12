@@ -1,6 +1,7 @@
 package main
 
 import (
+	"base/pkg/domain"
 	"context"
 	"encoding/json"
 	"errors"
@@ -32,6 +33,9 @@ type QueryRequestData struct {
 
 func main() {
 	e := echo.New()
+
+	db := domain.NewDb()
+	db.Connect()
 
 	// Middleware
 	e.Use(middleware.Logger())
