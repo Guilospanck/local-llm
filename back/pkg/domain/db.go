@@ -11,6 +11,7 @@ import (
 type Database struct {
 	hostname string
 	dbname   string
+	db       *sql.DB
 }
 
 const DB_USER = "postgres"
@@ -22,7 +23,6 @@ func (mydb *Database) Connect() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
@@ -30,30 +30,65 @@ func (mydb *Database) Connect() {
 		panic(err)
 	}
 
-	fmt.Printf("%s", connStr)
+	fmt.Printf("%s\n", connStr)
 	fmt.Println("Connected to Postgres!")
 
-	// Insert example
-	// color := "blue"
-	// price := 1_000_000.00
-	// sizeSqm := 450.28
-	// _, err = db.Query("INSERT INTO property(color, price, size_sqm) VALUES($1, $2, $3)", color, price, sizeSqm)
+	mydb.db = db
+}
 
-	type property struct {
-		id      int
-		color   string
-		price   float64
-		sizeSqm float32
+func (mydb *Database) Close() {
+	mydb.db.Close()
+}
+
+type Property struct {
+	id      int
+	color   string
+	price   float64
+	sizeSqm float32
+}
+
+func (mydb *Database) QueryByCharacteristics(color string, priceMin, priceMax float64, sizeSqmMin, sizeSqmMax float32) {
+	stmt, err := mydb.db.Prepare(`
+		SELECT * FROM property
+			WHERE color=$1 UNION
+		SELECT * FROM property
+			WHERE price >= $2 AND price <= $3 UNION
+		SELECT * FROM property
+			WHERE size_sqm >= $4 AND size_sqm <= $5;
+		`)
+
+	if err != nil {
+		fmt.Printf("Error preparing query: %s", err.Error())
+		panic(err)
 	}
 
-	rows, err := db.Query("SELECT * FROM property")
+	rows, err := stmt.Query(color, priceMin, priceMax, sizeSqmMin, sizeSqmMax)
+	if err != nil {
+		fmt.Printf("Error executing query: %s", err.Error())
+		panic(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		test := Property{}
+		err = rows.Scan(&test.id, &test.color, &test.price, &test.sizeSqm)
+		if err != nil {
+			// handle this error
+			panic(err)
+		}
+		fmt.Printf("%v\n", test)
+	}
+}
+
+func (mydb *Database) QueryAll() {
+	rows, err := mydb.db.Query("SELECT * FROM property")
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		test := property{}
+		test := Property{}
 		err = rows.Scan(&test.id, &test.color, &test.price, &test.sizeSqm)
 		if err != nil {
 			// handle this error
@@ -68,5 +103,4 @@ func NewDb() *Database {
 		hostname: "localhost",
 		dbname:   "local-ai",
 	}
-
 }

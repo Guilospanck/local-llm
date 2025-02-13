@@ -1,9 +1,9 @@
 package main
 
 import (
-	// "base/pkg/domain"
+	"base/pkg/domain"
 	"context"
-	"encoding/json"
+	// "encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -34,8 +34,12 @@ type QueryRequestData struct {
 func main() {
 	e := echo.New()
 
-	// db := domain.NewDb()
-	// db.Connect()
+	db := domain.NewDb()
+	db.Connect()
+	// db.QueryAll()
+	db.QueryByCharacteristics("Cyan", 10000, 70000, 21, 88.2)
+
+	defer db.Close()
 
 	// Middleware
 	e.Use(middleware.Logger())
@@ -47,7 +51,9 @@ func main() {
 
 	// Routes
 	e.GET("/healthz", func(c echo.Context) error { return c.String(http.StatusOK, "I'm healthy") })
-	e.POST("/", extractStream)
+	e.POST("/", callStream)
+	e.POST("/call", callSimple)
+	e.POST("/extract", extract)
 
 	// Start server
 	if err := e.Start(fmt.Sprintf(":%d", SERVER_PORT)); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -70,10 +76,15 @@ var extractPrompt string = `
 	fit it into a range of price that would make sense considering the current
 	house market.
 
-	A good range, probably:
+	A good range of price, probably:
 	- cheap: 0-100000
 	- medium: 101000-500000
 	- expensive: +500000
+
+	A good range of size, probably:
+	- small: 0-50
+	- medium: 51-300
+	- big: +300
 
 	You must respond **only** in JSON format. Do not include explanations, greetings, or extra text.
 	Your response must be valid JSON. Go straight to the answer. Do NOT hallucinate.
@@ -84,7 +95,8 @@ var extractPrompt string = `
 	Your response (a valid JSON, and nothing more than it):
 
 	{
-		"size": "big",
+		"sizeMin": 300,
+		"sizeMax": null, // no limits
 		"priceMin": 0,
 		"priceMax": 100000,
 		"views": ["sea", "mountains"],
@@ -102,7 +114,8 @@ func cleanLLMResponse(text string) string {
 	return strings.TrimSpace(cleanedText)
 }
 
-func extractStream(c echo.Context) error {
+// TODO: use streams...simple call too slow
+func extract(c echo.Context) error {
 	var body QueryRequestData
 
 	// parse the body into a json structure
@@ -121,50 +134,26 @@ func extractStream(c echo.Context) error {
 		log.Fatal(err)
 	}
 
-	// Set headers for streaming
-	c.Response().Header().Set("Content-Type", "text/plain")
-	c.Response().Header().Set("Transfer-Encoding", "chunked")
-
-	// Get the response writer and flusher
-	w := c.Response().Writer
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		return c.String(http.StatusInternalServerError, "Streaming unsupported")
-	}
-
-	ctx := context.Background()
-
 	prompt := fmt.Sprintf(extractPrompt, body.Query)
 
-	completion, err := llm.Call(ctx, prompt,
-		llms.WithTemperature(MODEL_TEMPERATURE),
-		llms.WithStreamingFunc(func(ctx context.Context, chunk []byte) error {
-			fmt.Fprint(w, string(chunk))
-			flusher.Flush() // Flush data immediately
-
-			return nil
-		}),
-	)
+	ctx := context.Background()
+	completion, err := llms.GenerateFromSinglePrompt(ctx, llm, prompt)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Extract JSON response
-	cleanedResponse := cleanLLMResponse(completion)
-	var result map[string]interface{}
-	err = json.Unmarshal([]byte(cleanedResponse), &result)
-	if err != nil {
-		fmt.Println("Error parsing JSON:", err)
-		return nil
-	}
+	// cleanedResponse := cleanLLMResponse(completion)
+	// var result map[string]interface{}
+	// err = json.Unmarshal([]byte(cleanedResponse), &result)
+	// if err != nil {
+	// 	fmt.Println("Error parsing JSON:", err)
+	// 	return nil
+	// }
 
-	// Print the valid JSON output
-	fmt.Println("JSON Output:", result)
-
-	// Prevents the compiler from saying that `completion` is not being used
-	_ = completion
-
-	return nil
+	// c.Response().Header().Set("Content-Type", "application/json")
+	// return c.JSON(http.StatusOK, result)
+	return c.String(http.StatusOK, completion)
 }
 
 func callStream(c echo.Context) error {

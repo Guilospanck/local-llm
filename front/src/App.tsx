@@ -8,6 +8,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4444/";
 const Search = ({
   thinking,
   onInputChange,
+  onCheckBoxChange,
   onAbortClick,
   onSearchClick,
   onKeyDown,
@@ -15,6 +16,7 @@ const Search = ({
 }: {
   thinking: boolean;
   onInputChange: (val: string) => void;
+  onCheckBoxChange: (val: boolean) => void;
   onAbortClick: () => void;
   onSearchClick: () => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -24,6 +26,11 @@ const Search = ({
     <div className="search-container">
       <div className="info">{thinking ? "Thinking..." : ""}</div>
       <div className="search">
+        <input
+          type="checkbox"
+          name="Extract?"
+          onChange={(e) => onCheckBoxChange(e.target.checked)}
+        />
         <input
           ref={inputRef}
           className="input"
@@ -58,6 +65,7 @@ function App() {
   >([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [currentAnswer, setCurrentAnswer] = useState<string>("");
+  const [extract, setExtract] = useState<boolean>(false);
 
   const focusInput = () => {
     if (inputRef.current) {
@@ -72,13 +80,9 @@ function App() {
   const removeThinkTag = (data: string) =>
     data.replace("<think>", "").replace("</think>", "");
 
-  const onSearchClick = async () => {
-    const t0 = performance.now();
-
-    controller = new AbortController();
-    setThinking(true);
-
+  const callStream = async () => {
     let data = "";
+    controller = new AbortController();
 
     try {
       const response = await fetch(API_URL, {
@@ -117,7 +121,43 @@ function App() {
       console.error(err);
     }
 
-    data = removeThinkTag(data);
+    return removeThinkTag(data);
+  };
+
+  const callExtract = async () => {
+    let data = "";
+    controller = new AbortController();
+
+    try {
+      const response = await fetch(`${API_URL}extract`, {
+        signal: controller.signal,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      data = await response.text();
+    } catch (err) {
+      console.error(err);
+    }
+
+    return data;
+  };
+
+  const onSearchClick = async () => {
+    const t0 = performance.now();
+
+    setThinking(true);
+
+    let data = "";
+
+    if (extract) {
+      data = await callExtract();
+    } else {
+      data = (await callStream()) ?? "";
+    }
 
     // calculate benchmark
     const t1 = performance.now();
@@ -144,6 +184,10 @@ function App() {
 
   const onInputChange = (val: string) => {
     setQuery(val);
+  };
+
+  const onCheckBoxChange = (checked: boolean) => {
+    setExtract(checked);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -179,6 +223,7 @@ function App() {
           inputRef={inputRef}
           thinking={thinking}
           onSearchClick={onSearchClick}
+          onCheckBoxChange={onCheckBoxChange}
           onAbortClick={onAbortClick}
           onInputChange={onInputChange}
           onKeyDown={onKeyDown}
