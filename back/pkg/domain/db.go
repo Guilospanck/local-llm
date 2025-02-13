@@ -41,13 +41,13 @@ func (mydb *Database) Close() {
 }
 
 type Property struct {
-	id      int
-	color   string
-	price   float64
-	sizeSqm float32
+	Id      int     `json:"-"`
+	Color   string  `json:"color"`
+	Price   float64 `json:"price"`
+	SizeSqm float32 `json:"sizeSqm"`
 }
 
-func (mydb *Database) QueryByCharacteristics(color string, priceMin, priceMax float64, sizeSqmMin, sizeSqmMax float32) {
+func (mydb *Database) QueryByCharacteristics(color string, priceMin, priceMax float64, sizeSqmMin, sizeSqmMax float32) []Property {
 	stmt, err := mydb.db.Prepare(`
 		SELECT * FROM property
 			WHERE color=$1 UNION
@@ -69,33 +69,40 @@ func (mydb *Database) QueryByCharacteristics(color string, priceMin, priceMax fl
 	}
 	defer rows.Close()
 
+	properties := []Property{}
+
 	for rows.Next() {
-		test := Property{}
-		err = rows.Scan(&test.id, &test.color, &test.price, &test.sizeSqm)
+		property := Property{}
+		err = rows.Scan(&property.Id, &property.Color, &property.Price, &property.SizeSqm)
 		if err != nil {
 			// handle this error
 			panic(err)
 		}
-		fmt.Printf("%v\n", test)
+		properties = append(properties, property)
 	}
+
+	return properties
 }
 
-func (mydb *Database) QueryAll() {
+func (mydb *Database) QueryAll() []Property {
 	rows, err := mydb.db.Query("SELECT * FROM property")
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
 
+	properties := []Property{}
 	for rows.Next() {
-		test := Property{}
-		err = rows.Scan(&test.id, &test.color, &test.price, &test.sizeSqm)
+		property := Property{}
+		err = rows.Scan(&property.Id, &property.Color, &property.Price, &property.SizeSqm)
 		if err != nil {
 			// handle this error
 			panic(err)
 		}
-		fmt.Printf("%v\n", test)
+		properties = append(properties, property)
 	}
+
+	return properties
 }
 
 func NewDb() *Database {

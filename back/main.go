@@ -3,7 +3,7 @@ package main
 import (
 	"base/pkg/domain"
 	"context"
-	// "encoding/json"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -31,13 +31,13 @@ type QueryRequestData struct {
 	Query string `json:"query"`
 }
 
+var db *domain.Database
+
 func main() {
 	e := echo.New()
 
-	db := domain.NewDb()
+	db = domain.NewDb()
 	db.Connect()
-	// db.QueryAll()
-	db.QueryByCharacteristics("Cyan", 10000, 70000, 21, 88.2)
 
 	defer db.Close()
 
@@ -109,9 +109,21 @@ func cleanLLMResponse(text string) string {
 	// Remove <think>...</think> content
 	re := regexp.MustCompile(`(?s)<think>.*?</think>`)
 	cleanedText := re.ReplaceAllString(text, "")
+	// Remove ```json```
+	cleanedText = strings.ReplaceAll(cleanedText, "```json", "")
+	cleanedText = strings.ReplaceAll(cleanedText, "```", "")
 
 	// Trim any extra spaces or newlines
 	return strings.TrimSpace(cleanedText)
+}
+
+type QueryProperty struct {
+	Color    string   `json:"color"`
+	SizeMin  float32  `json:"sizeMin"`
+	SizeMax  float32  `json:"sizeMax"`
+	PriceMin float64  `json:"priceMin"`
+	PriceMax float64  `json:"priceMax"`
+	Views    []string `json:"views"`
 }
 
 // TODO: use streams...simple call too slow
@@ -143,17 +155,19 @@ func extract(c echo.Context) error {
 	}
 
 	// Extract JSON response
-	// cleanedResponse := cleanLLMResponse(completion)
-	// var result map[string]interface{}
-	// err = json.Unmarshal([]byte(cleanedResponse), &result)
-	// if err != nil {
-	// 	fmt.Println("Error parsing JSON:", err)
-	// 	return nil
-	// }
+	cleanedResponse := cleanLLMResponse(completion)
+	var result QueryProperty
+	err = json.Unmarshal([]byte(cleanedResponse), &result)
+	if err != nil {
+		fmt.Println("Error parsing JSON:", err)
+		return nil
+	}
 
-	// c.Response().Header().Set("Content-Type", "application/json")
-	// return c.JSON(http.StatusOK, result)
-	return c.String(http.StatusOK, completion)
+	// Query DB with what we found
+	properties := db.QueryByCharacteristics(result.Color, result.PriceMin, result.PriceMax, result.SizeMin, result.SizeMax)
+
+	c.Response().Header().Set("Content-Type", "application/json")
+	return c.JSON(http.StatusOK, properties)
 }
 
 func callStream(c echo.Context) error {
