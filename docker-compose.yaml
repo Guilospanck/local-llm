@@ -29,6 +29,23 @@ services:
     networks:
       - local-llm-network
 
+  postgres:
+    image: postgres:latest
+    container_name: local-postgres
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USERNAME=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DBNAME=local-ai
+    depends_on:
+      - ollama
+    networks:
+      - local-llm-network
+
   backend:
     container_name: go-backend
     build:
@@ -39,7 +56,7 @@ services:
     environment:
       - OLLAMA_SERVER=http://ollama:11434
     depends_on:
-      - ollama
+      - postgres
     networks:
       - local-llm-network
 

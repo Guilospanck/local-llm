@@ -15,7 +15,7 @@ And be sure to have [Go](https://go.dev/doc/install), [pnpm](https://pnpm.io/ins
 
 ### Optional
 
-Install [just](https://github.com/casey/just) to simplify the development in dev mode.
+Install [just](https://github.com/casey/just) and [air](https://github.com/air-verse/air) to simplify the development in dev mode.
 
 
 ## Running
@@ -50,6 +50,8 @@ Now you have two ways of initialising the other components:
 
 #### With `just`
 
+##### Sequentially
+
 In one terminal:
 
 ```shell
@@ -62,6 +64,19 @@ In another:
 just back-init
 ```
 
+##### Concurrently
+
+Non-watch mode:
+
+```shell
+just dev
+```
+
+Watch mode (requires [air](https://github.com/air-verse/air)):
+
+```shell
+just dev-watch
+```
 
 #### Manual way
 
@@ -91,4 +106,11 @@ cd back/
 go mod tidy
 go run .
 ```
+
+## Extract
+
+There's a simple application via the `/extract` endpoint that will query a database via natural language.
+
+### Preparing the data
+
 

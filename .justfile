@@ -10,6 +10,12 @@ back-init:
 back-dev:
 	cd back/ && air
 
+dev-watch:
+	./scripts/dev.sh --watch
+
+dev:
+	./scripts/dev.sh 
+
 start-postgres:
 	docker run --rm -d --name local-postgres -v ./postgres/data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres
 
