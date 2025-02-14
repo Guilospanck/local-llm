@@ -35,14 +35,15 @@ services:
     ports:
       - 5432:5432
     restart: unless-stopped
+    depends_on:
+      - model-puller
     volumes:
       - ./postgres/data:/var/lib/postgresql/data
+      - ./back/pkg/domain/data/init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
       - POSTGRES_USERNAME=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DBNAME=local-ai
-    depends_on:
-      - ollama
+      - POSTGRES_DB=local-ai
     networks:
       - local-llm-network
 
@@ -56,7 +57,7 @@ services:
     environment:
       - OLLAMA_SERVER=http://ollama:11434
     depends_on:
-      - postgres
+      - model-puller
     networks:
       - local-llm-network
 
@@ -70,7 +71,7 @@ services:
     environment:
       - VITE_API_URL=http://backend:4444
     depends_on:
-      - ollama
+      - model-puller
     networks:
       - local-llm-network
 

@@ -46,6 +46,12 @@ Be sure to have Ollama running with the `Deep Seek R1` model:
 docker-compose up -d ollama model-puller
 ```
 
+To bring it down after using it:
+
+```shell
+docker-compose down ollama
+```
+
 Now you have two ways of initialising the other components:
 
 #### With `just`
@@ -107,10 +113,87 @@ go mod tidy
 go run .
 ```
 
-## Extract
+## Database
 
-There's a simple application via the `/extract` endpoint that will query a database via natural language.
+We want to spin up a Postgres database with some information. The next commands will create a databsae called `local-ai` that will be available at default port `5432` with three tables: `property`, `view` and `property_view` (Many-2-Many table between property and view).
 
-### Preparing the data
+> [!TIP]
+> You can easily create and run migrations by using the `just` formulas. See [Migrations](#migrations).
 
+### Docker-compose way
+
+Just run
+
+```shell
+docker-compose up -d postgres
+
+```
+
+To bring it down after using it:
+
+```shell
+docker-compose down postgres
+```
+
+### Docker way
+
+Just run
+
+```shell
+just start-postgres
+```
+
+### Migrations
+
+Create a migration file by running:
+
+```shell
+just create-migration MIGRATION_NAME
+```
+
+where `MIGRATION_NAME` is whatever name you want to give to it.
+
+After you create it and add the SQL information there, you can run migrations via (requires [migrate](https://github.com/golang-migrate/migrate)):
+
+```shell
+just migration-up
+# or to rollback
+just migration-down
+```
+
+
+## Possible calls
+
+There are two types of calls for the application: [Chat](#chat) and [Extract](#extract).
+
+### Chat
+
+This is the normal GPT-like chat with the LLM. Just call the `/` endpoint with a query.
+
+Example:
+
+```shell
+curl 'http://localhost:4444/' \
+  -H 'Accept: */*' \
+  -H 'Connection: keep-alive' \
+  -H 'Content-Type: application/json' \
+  --data-raw $'{"query":"Hi"}'
+```
+
+### Extract
+
+It's used to extract some characteristics from a natural language input. This is used to query the database.
+
+There's a simple application via the `/extract` endpoint that will query a database via natural language. Before running it, be sure to have the [Database](#database) up and running.
+
+
+#### Running the extract 
+
+```shell
+curl 'http://localhost:4444/extract' \
+  -H 'Content-Type: application/json' \
+  --data-raw '{"query":"I want a big house, close to the sea and to the mountains. Not very expensive. Maybe marble colored"}'
+```
+
+It should return a JSON object with some characteristics of the property you wanna buy.
 

@@ -17,10 +17,19 @@ dev:
 	./scripts/dev.sh 
 
 start-postgres:
-	docker run --rm -d --name local-postgres -v ./postgres/data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres
+	docker rm -f local-postgres
+	docker run --rm -d \
+		--name local-postgres \
+		-v $(pwd)/postgres/data:/var/lib/postgresql/data \
+		-v $(pwd)/back/pkg/domain/data/init.sql:/docker-entrypoint-initdb.d/init.sql \
+		-e POSTGRES_USERNAME=postgres \
+		-e POSTGRES_PASSWORD=postgres \
+		-e POSTGRES_DB=local-ai \
+		-p 5432:5432 \
+		-d postgres:latest
 
-MIGRATIONS_PATH := "./back/pkg/domain/migrations"
-SEEDS_PATH := "./back/pkg/domain/seeds/*"
+MIGRATIONS_PATH := "./back/pkg/domain/data/migrations/*"
+SEEDS_PATH := "./back/pkg/domain/data/seeds/*"
 POSTGRES_URL := "postgres://postgres:postgres@localhost:5432/local-ai?sslmode=disable"
 POSTGRES_USERNAME := "postgres"
 POSTGRES_PASSWORD := "postgres"
