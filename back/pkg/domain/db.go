@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"math"
 
 	_ "github.com/lib/pq"
 )
@@ -47,15 +48,27 @@ type Property struct {
 	SizeSqm float32 `json:"sizeSqm"`
 }
 
-func (mydb *Database) QueryByCharacteristics(color string, priceMin, priceMax float64, sizeSqmMin, sizeSqmMax float32) []Property {
-	stmt, err := mydb.db.Prepare(`
+func (mydb *Database) QueryByCharacteristics(color string, priceMin, priceMax float64, sizeSqmMin, sizeSqmMax float32, limit bool) []Property {
+	if sizeSqmMax == 0 {
+		sizeSqmMax = math.MaxFloat32
+	}
+	if priceMax == 0 {
+		priceMax = math.MaxFloat64
+	}
+
+	queryLimit := ""
+	if limit {
+		queryLimit = "LIMIT 3"
+	}
+
+	stmt, err := mydb.db.Prepare(fmt.Sprintf(`
 		SELECT * FROM property
-			WHERE color=$1 UNION
+			WHERE color = $1 UNION
 		SELECT * FROM property
 			WHERE price >= $2 AND price <= $3 UNION
 		SELECT * FROM property
-			WHERE size_sqm >= $4 AND size_sqm <= $5;
-		`)
+			WHERE size_sqm >= $4 AND size_sqm <= $5 %s;
+		`, queryLimit))
 
 	if err != nil {
 		fmt.Printf("Error preparing query: %s", err.Error())
