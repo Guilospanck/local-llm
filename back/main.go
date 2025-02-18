@@ -200,13 +200,14 @@ func extract(c echo.Context) error {
 	err = json.Unmarshal([]byte(cleanedResponse), &result)
 	if err != nil {
 		fmt.Println("Error parsing JSON:", err)
+		fmt.Println("Using default query...")
 		// Set the query to query all data
 		result = DEFAULT_QUERY
 		limit = true
 	}
 
 	// Query DB with what we found
-	properties := db.QueryByCharacteristics(result.Color, result.PriceMin, result.PriceMax, result.SizeMin, result.SizeMax, limit)
+	properties := db.QueryByCharacteristics(result.Color, result.PriceMin, result.PriceMax, result.SizeMin, result.SizeMax, result.Views, limit)
 
 	c.Response().Header().Set("Content-Type", "application/json")
 	return c.JSON(http.StatusOK, properties)

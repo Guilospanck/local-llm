@@ -29,7 +29,7 @@ start-postgres:
 		-d postgres:latest
 
 MIGRATIONS_PATH := "./back/pkg/domain/data/migrations/*"
-SEEDS_PATH := "./back/pkg/domain/data/seeds/*"
+SEEDS_PATH := "./back/pkg/domain/data/seeds"
 POSTGRES_URL := "postgres://postgres:postgres@localhost:5432/local-ai?sslmode=disable"
 POSTGRES_USERNAME := "postgres"
 POSTGRES_PASSWORD := "postgres"
