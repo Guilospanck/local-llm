@@ -1,11 +1,11 @@
 package domain
 
 import (
+	"base/pkg/utils"
 	"database/sql"
 	"fmt"
 	"log"
 	"math"
-	"strings"
 
 	_ "github.com/lib/pq"
 )
@@ -16,11 +16,8 @@ type Database struct {
 	db       *sql.DB
 }
 
-const DB_USER = "postgres"
-const DB_PASSWORD = "postgres"
-
 func (mydb *Database) Connect() {
-	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", DB_USER, DB_PASSWORD, mydb.hostname, mydb.dbname)
+	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", utils.DB_USER, utils.DB_PASSWORD, mydb.hostname, mydb.dbname)
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
@@ -42,35 +39,19 @@ func (mydb *Database) Close() {
 	mydb.db.Close()
 }
 
-type Property struct {
-	Id      int     `json:"-"`
-	Color   string  `json:"color"`
-	Price   float64 `json:"price"`
-	SizeSqm float32 `json:"sizeSqm"`
-}
-
-func joinSlice[T []E, E any](slice T, separator string) string {
-	strArray := make([]string, len(slice))
-	for i, element := range slice {
-		strArray[i] = fmt.Sprint(element)
-	}
-
-	return strings.Join(strArray, separator)
-}
-
 func (mydb *Database) getPropertyIdFromViewIds(viewIds string) []int {
 	queriedPropertyIds := []int{}
 
-	query := fmt.Sprintf(`SELECT DISTINCT property_id from property_views WHERE view_id in (%s)`, viewIds)
+	query := fmt.Sprintf(Queries["property_views"]["id_viewid"], viewIds)
 	stmt, err := mydb.db.Prepare(query)
 	if err != nil {
-		fmt.Printf("Error preparing query SELECT property_id from property_views:\n %s\n", err.Error())
+		fmt.Printf("Error preparing query %s:\n %s\n", Queries["property_views"]["id_viewid"], err.Error())
 		panic("")
 	}
 
 	rows, err := stmt.Query()
 	if err != nil {
-		fmt.Printf("\nError executing query SELECT property_id FROM property_views:\n %s\n", err.Error())
+		fmt.Printf("\nError executing query %s:\n %s\n", Queries["property_views"]["id_viewid"], err.Error())
 		panic(err)
 	}
 	defer rows.Close()
@@ -91,17 +72,17 @@ func (mydb *Database) getPropertyIdFromViewIds(viewIds string) []int {
 func (mydb *Database) getViewIds(view string) []int {
 	queriedViewIds := []int{}
 
-	query := fmt.Sprintf(`SELECT v.id from "view" v WHERE v.view ILIKE %s`, "'"+view+"%'")
+	query := fmt.Sprintf(Queries["view"]["id_view"], "'"+view+"%'")
 
 	stmt, err := mydb.db.Prepare(query)
 	if err != nil {
-		fmt.Printf("Error preparing query SELECT id from view:\n %s\n", err.Error())
+		fmt.Printf("Error preparing query %s:\n %s\n", Queries["view"]["id_view"], err.Error())
 		panic(err)
 	}
 
 	rows, err := stmt.Query()
 	if err != nil {
-		fmt.Printf("\nError executing query SELECT id from VIEW:\n %s\n", err.Error())
+		fmt.Printf("\nError executing query %s:\n %s\n", Queries["view"]["id_view"], err.Error())
 		panic(err)
 	}
 	defer rows.Close()
@@ -137,7 +118,7 @@ func (mydb *Database) QueryByCharacteristics(color string, priceMin, priceMax fl
 			queriedViewIds = append(queriedViewIds, viewIds...)
 		}
 
-		viewIds := joinSlice(queriedViewIds, ",")
+		viewIds := utils.JoinSlice(queriedViewIds, ",")
 
 		// Get property ids based on the views ids
 		if viewIds != "" {
@@ -146,16 +127,17 @@ func (mydb *Database) QueryByCharacteristics(color string, priceMin, priceMax fl
 		}
 	}
 
-	propertyIds := joinSlice(queriedPropertyIds, ",")
+	propertyIds := utils.JoinSlice(queriedPropertyIds, ",")
 
-	queryByColor := fmt.Sprintf("SELECT * FROM property WHERE color = '%s'", color)
-	queryByPrice := fmt.Sprintf("SELECT * FROM property WHERE price >= %f AND price <= %f", priceMin, priceMax)
-	queryBySize := fmt.Sprintf("SELECT * FROM property WHERE size_sqm >= %f AND size_sqm <= %f", sizeSqmMin, sizeSqmMax)
+	queryByColor := fmt.Sprintf(Queries["property"]["*_color"], color)
+	queryByPrice := fmt.Sprintf(Queries["property"]["*_price"], priceMin, priceMax)
+	queryBySize := fmt.Sprintf(Queries["property"]["*_size_sqm"], sizeSqmMin, sizeSqmMax)
 
 	query := fmt.Sprintf("%s UNION %s UNION %s", queryByColor, queryByPrice, queryBySize)
 
 	if propertyIds != "" {
-		query += fmt.Sprintf(" UNION SELECT * FROM property WHERE id in (%s)", propertyIds)
+		queryPropertyByIds := fmt.Sprintf(Queries["property"]["*_id"], propertyIds)
+		query += fmt.Sprintf(" UNION %s", queryPropertyByIds)
 	}
 
 	if limit {
@@ -166,13 +148,13 @@ func (mydb *Database) QueryByCharacteristics(color string, priceMin, priceMax fl
 
 	stmt, err := mydb.db.Prepare(query)
 	if err != nil {
-		fmt.Printf("Error preparing query: %s", err.Error())
+		fmt.Printf("Error preparing query %s:\n %s\n", query, err.Error())
 		panic(err)
 	}
 
 	rows, err := stmt.Query()
 	if err != nil {
-		fmt.Printf("\nError executing query SELECT * FROM property:\n %s\n", err.Error())
+		fmt.Printf("\nError executing query %s:\n %s\n", query, err.Error())
 		panic(err)
 	}
 	defer rows.Close()
@@ -183,7 +165,7 @@ func (mydb *Database) QueryByCharacteristics(color string, priceMin, priceMax fl
 		property := Property{}
 		err = rows.Scan(&property.Id, &property.Color, &property.Price, &property.SizeSqm)
 		if err != nil {
-			// handle this error
+			fmt.Printf("\nError scanning query %s:\n %s\n", query, err.Error())
 			panic(err)
 		}
 		properties = append(properties, property)
@@ -193,7 +175,7 @@ func (mydb *Database) QueryByCharacteristics(color string, priceMin, priceMax fl
 }
 
 func (mydb *Database) QueryAll() []Property {
-	rows, err := mydb.db.Query("SELECT * FROM property")
+	rows, err := mydb.db.Query(Queries["property"]["*"])
 	if err != nil {
 		panic(err)
 	}
@@ -204,7 +186,7 @@ func (mydb *Database) QueryAll() []Property {
 		property := Property{}
 		err = rows.Scan(&property.Id, &property.Color, &property.Price, &property.SizeSqm)
 		if err != nil {
-			// handle this error
+			fmt.Printf("\nError scanning query %s:\n %s\n", Queries["property"]["*"], err.Error())
 			panic(err)
 		}
 		properties = append(properties, property)
@@ -215,7 +197,7 @@ func (mydb *Database) QueryAll() []Property {
 
 func NewDb() *Database {
 	return &Database{
-		hostname: "localhost",
-		dbname:   "local-ai",
+		hostname: utils.DB_HOSTNAME,
+		dbname:   utils.DB_DBNAME,
 	}
 }

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -16,4 +17,14 @@ func CleanLLMResponse(text string) string {
 
 	// Trim any extra spaces or newlines
 	return strings.TrimSpace(cleanedText)
+}
+
+// Helper function to join the elements of a slice
+func JoinSlice[T []E, E any](slice T, separator string) string {
+	strArray := make([]string, len(slice))
+	for i, element := range slice {
+		strArray[i] = fmt.Sprint(element)
+	}
+
+	return strings.Join(strArray, separator)
 }
