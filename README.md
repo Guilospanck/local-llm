@@ -1,7 +1,7 @@
 # Local LLM
 
 Easiest way to have your own local setup running LLM.
-It uses [Ollama](https://ollama.com/) with the [Deep Seek R1](https://ollama.com/library/deepseek-r1) model.
+It uses [Ollama](https://ollama.com/) to load the following models: [Deep Seek R1:1.5b](https://ollama.com/library/deepseek-r1:1.5b), [Llama3.2](https://ollama.com/library/llama3.2) and [Gemma:2b](https://ollama.com/library/gemma:2b).
 
 ## Installation
 
@@ -17,15 +17,20 @@ And be sure to have [Go](https://go.dev/doc/install), [pnpm](https://pnpm.io/ins
 
 Install [just](https://github.com/casey/just) and [air](https://github.com/air-verse/air) to simplify the development in dev mode.
 
-
 ## Running
+
+### Model selection
+
+You can select models by setting the `OLLAMA_MODEL` environment variable before the commands of this section. The following values are valid: `deepseek-r1:1.5b`, `gemma:2b` or `llama3.2`.
 
 ### Docker compose
 
 If you want to just have it running to try it out, do:
 
 ```shell
-docker-compose up -d --build
+docker-compose up -d --build --remove-orphans
+# if you have just
+just dcup
 ```
 
 You should be able able now to see it running at http://localhost:3000/.
@@ -34,6 +39,8 @@ To bring it down after using it:
 
 ```shell
 docker-compose down
+# if you have just
+just dcdown
 ```
 
 Otherwise, if you want to run things in Dev mode, check next section.
@@ -43,7 +50,9 @@ Otherwise, if you want to run things in Dev mode, check next section.
 Be sure to have Ollama running with the `Deep Seek R1` model:
 
 ```shell
-docker-compose up -d ollama model-puller
+docker-compose up -d --build ollama model-puller
+# if you have just
+just dc-ollama
 ```
 
 To bring it down after using it:

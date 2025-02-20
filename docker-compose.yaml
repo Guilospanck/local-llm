@@ -56,8 +56,10 @@ services:
     restart: unless-stopped
     environment:
       - OLLAMA_SERVER=http://ollama:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-deepseek-r1:1.5b}
+      - DB_HOSTNAME=postgres
     depends_on:
-      - model-puller
+      - postgres
     networks:
       - local-llm-network
 
@@ -71,7 +73,7 @@ services:
     environment:
       - VITE_API_URL=http://backend:4444
     depends_on:
-      - model-puller
+      - backend
     networks:
       - local-llm-network
 

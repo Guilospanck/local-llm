@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
 
 	"log/slog"
 	"net/http"
@@ -31,8 +32,15 @@ func Server() {
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
-	modelName = flag.String("model", "deepseek-r1", "Deep Seek R1")
+	chosenModel, exists := os.LookupEnv("OLLAMA_MODEL")
+	if !exists || chosenModel == "" {
+		chosenModel = string(utils.DEFAULT_OLLAMA_MODEL)
+	}
+
+	modelName = flag.String("model", chosenModel, "")
 	flag.Parse()
+
+	fmt.Printf("Ollama will use model %s", *modelName)
 
 	// Routes
 	e.GET("/healthz", func(c echo.Context) error { return c.String(http.StatusOK, "I'm healthy") })

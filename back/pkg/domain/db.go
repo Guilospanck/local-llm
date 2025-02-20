@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"os"
 
 	_ "github.com/lib/pq"
 )
@@ -141,7 +142,7 @@ func (mydb *Database) QueryByCharacteristics(color string, priceMin, priceMax fl
 	}
 
 	if limit {
-		query += " LIMIT 3;"
+		query += fmt.Sprintf(" LIMIT %d;", utils.MAX_ITEMS_TO_QUERY)
 	}
 
 	fmt.Printf("\n\nQuerying DB:\n %s\n\n", query)
@@ -196,8 +197,13 @@ func (mydb *Database) QueryAll() []Property {
 }
 
 func NewDb() *Database {
+	hostname, exists := os.LookupEnv("DB_HOSTNAME")
+	if !exists {
+		hostname = utils.DB_HOSTNAME
+	}
+
 	return &Database{
-		hostname: utils.DB_HOSTNAME,
+		hostname: hostname,
 		dbname:   utils.DB_DBNAME,
 	}
 }

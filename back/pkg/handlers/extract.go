@@ -37,7 +37,9 @@ func Extract(c echo.Context, db *domain.Database, modelName *string) error {
 		log.Fatal(err)
 	}
 
-	prompt := fmt.Sprintf(utils.ExtractPrompt, body.Query)
+	extractPrompt := utils.GetPromptBasedOnModel(utils.Model(*modelName))
+
+	prompt := fmt.Sprintf(extractPrompt, body.Query)
 
 	ctx := context.Background()
 	completion, err := llms.GenerateFromSinglePrompt(ctx, llm, prompt)
@@ -46,6 +48,9 @@ func Extract(c echo.Context, db *domain.Database, modelName *string) error {
 	}
 
 	limit := false
+
+	fmt.Println()
+	fmt.Println(completion)
 
 	// Extract JSON response
 	cleanedResponse := utils.CleanLLMResponse(completion)

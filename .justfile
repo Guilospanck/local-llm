@@ -4,17 +4,31 @@ front-init:
 front-dev:
 	cd front/ && pnpm dev
 
-back-init:
-	cd back/ && go mod tidy && go run .
+back-init MODEL='deepseek-r1:1.5b':
+	bash -c 'source ./scripts/valid_models.sh && validate_model "{{MODEL}}"'
+	cd back/ && go mod tidy && OLLAMA_MODEL={{MODEL}} go run .
 
-back-dev:
-	cd back/ && air
+back-dev MODEL='deepseek-r1:1.5b':
+	bash -c 'source ./scripts/valid_models.sh && validate_model "{{MODEL}}"'
+	cd back/ && OLLAMA_MODEL={{MODEL}} air
 
-dev-watch:
-	./scripts/dev.sh --watch
+dev-watch MODEL='deepseek-r1:1.5b':
+	bash -c 'source ./scripts/valid_models.sh && validate_model "{{MODEL}}"'
+	OLLAMA_MODEL={{MODEL}} ./scripts/dev.sh --watch
 
-dev:
-	./scripts/dev.sh 
+dev MODEL='deepseek-r1:1.5b':
+	bash -c 'source ./scripts/valid_models.sh && validate_model "{{MODEL}}"'
+	OLLAMA_MODEL={{MODEL}} ./scripts/dev.sh 
+
+dcup:
+	docker-compose up -d --build --remove-orphans
+
+dc-ollama MODEL='deepseek-r1:1.5b':
+	bash -c 'source ./scripts/valid_models.sh && validate_model "{{MODEL}}"'
+	OLLAMA_MODEL={{MODEL}} docker-compose up -d --build ollama model-puller
+
+dcdown:
+	docker-compose down
 
 start-postgres:
 	docker rm -f local-postgres
