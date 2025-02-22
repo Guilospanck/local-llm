@@ -19,6 +19,8 @@ Install [just](https://github.com/casey/just) and [air](https://github.com/air-v
 
 ## Running
 
+There are multiple ways of running the project, the easiest is just by running the [Docker compose](#docker-compose) up command. Then just go to `http://localhost:3000` to play with it. If you want to configure also the model used, check [Model selection](#model-selection) section.
+
 ### Model selection
 
 You can select models by setting the `OLLAMA_MODEL` environment variable before the commands of this section. The following values are valid: `deepseek-r1:1.5b`, `gemma:2b` or `llama3.2`.

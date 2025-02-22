@@ -16,7 +16,7 @@ services:
     networks:
       - local-llm-network
 
-  # Sidecar to pull a model as soon as the ollama service starts
+  # Sidecar to pull models as soon as the ollama service starts
   model-puller:
     image: ollama/ollama:latest
     container_name: ollama-model-puller

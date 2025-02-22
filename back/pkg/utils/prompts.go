@@ -64,20 +64,6 @@ var ExtractPromptDeepseek string = `
 	If the color can be any (or is not specified), set it to null.
 
 	If no views specified, just leave it an empty array like this: []. If some view is specified, you don't need to add the suffix "view" to it. Be aware that if one says "beautiful close to the sea" the view should be "sea" and not "beautiful".
-
-	Example of input:
-	User: "I want a big house, close to the sea and to the mountains. Not very expensive. Maybe marble colored"
-
-	Example of response (a valid JSON, and nothing more than it):
-
-	{
-		"sizeMin": 300, // big house
-		"sizeMax": null, // big house has no max limit for size
-		"priceMin": 0, // not very expensive = cheap category
-		"priceMax": 100000, // cheap category price max
-		"views": ["sea", "mountains"],
-		"color": "marble"
-	}
 `
 
 var ExtractPromptGemma2b string = `

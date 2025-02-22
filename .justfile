@@ -20,8 +20,9 @@ dev MODEL='deepseek-r1:1.5b':
 	bash -c 'source ./scripts/valid_models.sh && validate_model "{{MODEL}}"'
 	OLLAMA_MODEL={{MODEL}} ./scripts/dev.sh 
 
-dcup:
-	docker-compose up -d --build --remove-orphans
+dcup MODEL='deepseek-r1':
+	bash -c 'source ./scripts/valid_models.sh && validate_model "{{MODEL}}"'
+	OLLAMA_MODEL={{MODEL}} docker-compose up -d --build --remove-orphans
 
 dc-ollama MODEL='deepseek-r1:1.5b':
 	bash -c 'source ./scripts/valid_models.sh && validate_model "{{MODEL}}"'
